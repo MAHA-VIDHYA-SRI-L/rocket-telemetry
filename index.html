@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080f1b">
+  <link rel="icon" href="data:,">
+  <title>ATL Rocket Telemetry | Ground Station</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="dashboard">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="ATL rocket telemetry home">
+        <span class="brand-mark" aria-hidden="true">ATL</span>
+        <span>ROCKET SYSTEMS <b>/ GROUND STATION</b></span>
+      </a>
+      <div class="top-actions">
+        <span id="connection-pill" class="connection-pill" data-state="offline">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="connection-status">OFFLINE</span>
+        </span>
+        <button id="connect-button" class="button button-primary" type="button">Connect</button>
+        <button id="disconnect-button" class="button button-secondary" type="button" disabled>Disconnect</button>
+      </div>
+    </header>
+
+    <section class="mission-heading" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">LIVE FLIGHT TELEMETRY <span>//</span> DOWNLINK</p>
+        <h1 id="page-title">ATL ROCKET TELEMETRY</h1>
+        <p class="subtitle">Device ID: <strong id="device-id">rocket-001</strong></p>
+      </div>
+      <div class="vehicle-tag">NODEMCU ESP-12E <span>·</span> EMQX WSS</div>
+    </section>
+
+    <section class="status-strip" aria-label="Telemetry stream status">
+      <div class="status-item">
+        <span class="status-label">LAST MESSAGE</span>
+        <strong id="last-message-time">Waiting for data</strong>
+      </div>
+      <div class="status-item">
+        <span class="status-label">PACKETS RECEIVED</span>
+        <strong id="packet-count">0</strong>
+      </div>
+      <div class="status-item">
+        <span class="status-label">TOPIC</span>
+        <code id="mqtt-topic">rocket/rocket-001/telemetry</code>
+      </div>
+      <div class="status-item">
+        <span class="status-label">BROKER</span>
+        <code>obdc2608.ala.us-east-1.emqxsl.com:8084</code>
+      </div>
+    </section>
+
+    <section class="connect-panel" aria-labelledby="connect-title">
+      <div class="panel-heading compact">
+        <div>
+          <p class="eyebrow">SECURE WEBSOCKET LINK</p>
+          <h2 id="connect-title">MQTT connection</h2>
+        </div>
+        <span id="subscription-state" class="tag tag-muted">NOT SUBSCRIBED</span>
+      </div>
+      <form id="connection-form" class="connection-form" autocomplete="off">
+        <label>
+          <span>Dashboard username</span>
+          <input id="mqtt-username" name="username" type="text" placeholder="Enter dashboard username" autocomplete="username" required>
+        </label>
+        <label>
+          <span>Dashboard password</span>
+          <input id="mqtt-password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+        </label>
+        <p class="security-note">
+          Credentials stay in this browser session memory only. No password is stored in localStorage or sent to this dashboard server. Browser-side MQTT credentials are visible to anyone with access to this browser session; this is a personal development dashboard, not production-grade secret storage.
+        </p>
+      </form>
+      <p id="connection-detail" class="connection-detail" role="status">Enter dashboard credentials, then select Connect.</p>
+    </section>
+
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">SENSOR OVERVIEW</p>
+        <h2>Live measurements</h2>
+      </div>
+      <span class="units-note">Values update only from incoming MQTT packets</span>
+    </div>
+
+    <section class="sensor-grid" aria-label="Sensor overview">
+      <article class="metric-card accent-cyan">
+        <div class="metric-head"><span>BMP280 TEMPERATURE</span><span class="metric-state" id="temperature-state">NO DATA</span></div>
+        <div class="metric-value"><strong id="temperature">--</strong><span>°C</span></div>
+        <p>Ambient temperature</p>
+      </article>
+      <article class="metric-card accent-blue">
+        <div class="metric-head"><span>PRESSURE</span><span class="metric-state" id="pressure-state">NO DATA</span></div>
+        <div class="metric-value"><strong id="pressure">--</strong><span>hPa</span></div>
+        <p>Barometric pressure</p>
+      </article>
+      <article class="metric-card accent-green">
+        <div class="metric-head"><span>BAROMETRIC ALTITUDE</span><span class="metric-state" id="altitude-state">NO DATA</span></div>
+        <div class="metric-value"><strong id="altitude">--</strong><span>m</span></div>
+        <p>Estimated altitude</p>
+      </article>
+      <article class="metric-card accent-violet">
+        <div class="metric-head"><span>MPU6050 TEMPERATURE</span><span class="metric-state" id="imu-temperature-state">NO DATA</span></div>
+        <div class="metric-value"><strong id="imu-temperature">--</strong><span>°C</span></div>
+        <p>IMU die temperature</p>
+      </article>
+    </section>
+
+    <section class="panel imu-panel" aria-labelledby="imu-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">MOTION INSTRUMENT</p>
+          <h2 id="imu-title">MPU6050</h2>
+        </div>
+        <span id="imu-state" class="tag tag-warn">NO DATA</span>
+      </div>
+      <div class="imu-grid">
+        <div class="vector-block">
+          <div class="vector-title"><span>ACCELEROMETER</span><small>m/s²</small></div>
+          <div class="axis-grid">
+            <div data-axis="x"><small>X</small><strong id="accel-x">--</strong></div>
+            <div data-axis="y"><small>Y</small><strong id="accel-y">--</strong></div>
+            <div data-axis="z"><small>Z</small><strong id="accel-z">--</strong></div>
+          </div>
+        </div>
+        <div class="vector-block">
+          <div class="vector-title"><span>GYROSCOPE</span><small>rad/s</small></div>
+          <div class="axis-grid">
+            <div data-axis="x"><small>X</small><strong id="gyro-x">--</strong></div>
+            <div data-axis="y"><small>Y</small><strong id="gyro-y">--</strong></div>
+            <div data-axis="z"><small>Z</small><strong id="gyro-z">--</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel attitude-panel" aria-labelledby="attitude-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">3D ORIENTATION</p>
+          <h2 id="attitude-title">Rocket attitude</h2>
+        </div>
+        <span id="attitude-state" class="tag tag-warn">SENSOR DATA UNAVAILABLE</span>
+      </div>
+      <div class="attitude-layout">
+        <div id="attitude-view" class="attitude-view" role="img" aria-label="Interactive 3D rocket attitude view"></div>
+        <div class="attitude-side">
+          <div class="attitude-readouts">
+            <div><span>PITCH</span><strong id="attitude-pitch">--</strong></div>
+            <div><span>ROLL</span><strong id="attitude-roll">--</strong></div>
+            <div><span>REL YAW</span><strong id="attitude-yaw">--</strong></div>
+          </div>
+          <div class="attitude-calibration-row">
+            <span>CALIBRATION</span>
+            <span id="attitude-calibration-state" class="tag tag-warn">NOT CALIBRATED</span>
+          </div>
+          <p id="attitude-freshness" class="attitude-freshness">No live sample</p>
+          <div class="attitude-controls">
+            <button id="attitude-calibrate" class="button button-primary" type="button">SET UPRIGHT / CALIBRATE</button>
+            <button id="attitude-reset" class="button button-secondary" type="button">CLEAR CALIBRATION</button>
+            <button id="camera-reset" class="button button-ghost" type="button">RESET CAMERA</button>
+            <label class="attitude-toggle">
+              <input id="attitude-tracking" type="checkbox" checked>
+              <span>Live attitude</span>
+            </label>
+          </div>
+          <p class="attitude-note">SET UPRIGHT / CALIBRATE captures the current physical sensor orientation as the reference. The rocket is shown upright at that moment; all later rotation is relative to that reference. RESET CAMERA only moves the camera.</p>
+          <p class="attitude-note">Drag the 3D view to orbit, scroll to zoom. The rocket follows live MPU6050 packets only. Yaw is relative and integrated from the gyroscope alone, so it can drift and is not an absolute compass heading.</p>
+        </div>
+      </div>
+      <details class="attitude-debug">
+        <summary>ATTITUDE DIAGNOSTICS</summary>
+        <div class="debug-grid">
+          <div><span>MQTT RATE</span><strong id="debug-mqtt-rate">0.00 msg/s</strong></div>
+          <div><span>SAMPLE AGE</span><strong id="debug-sample-age">--</strong></div>
+          <div><span>PACKET INTERVAL</span><strong id="debug-packet-interval">-- ms</strong></div>
+          <div><span>PITCH / ROLL / YAW</span><strong id="debug-angles">-- / -- / --</strong></div>
+          <div><span>GYRO BIAS rad/s</span><strong id="debug-gyro-bias">0.000, 0.000, 0.000</strong></div>
+          <div><span>MOTION</span><strong id="debug-motion">UNKNOWN</strong></div>
+          <div><span>RENDER FPS</span><strong id="debug-fps">0</strong></div>
+          <div><span>SENSOR VALIDITY</span><strong id="debug-validity">INVALID</strong></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="charts-section" aria-labelledby="charts-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">LIVE CHARTS</p>
+          <h2 id="charts-title">Rolling telemetry history</h2>
+        </div>
+        <span class="units-note">Latest 60 readings</span>
+      </div>
+      <div class="chart-grid">
+        <article class="panel chart-card">
+          <h3>Barometric altitude <small>m</small></h3>
+          <div class="chart-wrap"><canvas id="altitude-chart" aria-label="Barometric altitude chart"></canvas></div>
+        </article>
+        <article class="panel chart-card">
+          <h3>Temperature <small>°C</small></h3>
+          <div class="chart-wrap"><canvas id="temperature-chart" aria-label="Temperature chart"></canvas></div>
+        </article>
+        <article class="panel chart-card chart-card-wide">
+          <h3>Accelerometer <small>m/s²</small></h3>
+          <div class="chart-wrap"><canvas id="accelerometer-chart" aria-label="Accelerometer X Y Z chart"></canvas></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel gps-panel" aria-labelledby="gps-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">NAVIGATION</p>
+          <h2 id="gps-title">GPS · NEO-6M</h2>
+        </div>
+        <span id="gps-state" class="tag tag-warn">WAITING FOR GPS FIX</span>
+      </div>
+      <div id="gps-warning" class="gps-warning">WAITING FOR GPS FIX</div>
+      <div class="gps-grid">
+        <div><span>LATITUDE</span><strong id="gps-latitude">--</strong></div>
+        <div><span>LONGITUDE</span><strong id="gps-longitude">--</strong></div>
+        <div><span>GPS ALTITUDE</span><strong><span id="gps-altitude">--</span> m</strong></div>
+        <div><span>SATELLITES</span><strong id="gps-satellites">--</strong></div>
+      </div>
+      <p class="gps-note">No map or coordinates are displayed until the vehicle reports a valid GPS fix.</p>
+    </section>
+
+    <section class="panel log-panel" aria-labelledby="log-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">DOWNLINK HISTORY</p>
+          <h2 id="log-title">Telemetry log</h2>
+        </div>
+        <button id="clear-log-button" class="button button-ghost" type="button">Clear log</button>
+      </div>
+      <ol id="telemetry-log" class="telemetry-log" aria-live="polite">
+        <li class="log-empty">No telemetry packets received yet.</li>
+      </ol>
+    </section>
+
+    <details class="raw-data">
+      <summary>Raw telemetry packet</summary>
+      <pre id="telemetry">No packet received yet.</pre>
+    </details>
+
+    <footer class="footer-note">
+      <span>PERSONAL DEVELOPMENT DASHBOARD</span>
+      <span>Read-only link · no commands published to the vehicle topic</span>
+    </footer>
+  </main>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="attitude.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
